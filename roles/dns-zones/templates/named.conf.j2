@@ -1,0 +1,13 @@
+{% for zone in dns_zones %}
+zone "{{ zone.name }}" {
+    type native;
+    file "/etc/named/zones/forward/{{ zone.name }}.db";
+};
+{% endfor %}
+
+{% for network in networks %}
+zone "{{ '.'.join(network.split('.')[::-1]) }}.in-addr.arpa" {
+    type native;
+    file "/etc/named/zones/reverse/{{ '.'.join(network.split('.')[::-1]) }}.in-addr.arpa.db";
+};
+{% endfor %}

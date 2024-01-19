@@ -1,0 +1,67 @@
+- name: Create forward lookup zone directory
+  file:
+    path: /etc/named/zones/forward
+    state: directory
+    owner: root
+    group: root
+    mode: '0775'
+
+- name: Create reverse lookup zone directory
+  file:
+    path: /etc/named/zones/reverse
+    state: directory
+    owner: root
+    group: root
+    mode: '0775'
+
+- name: Create forward zone files
+  template:
+    src: forward_zone.j2
+    dest: "/etc/named/zones/forward/{{ item.zone_name }}.db"
+    owner: root
+    group: root
+    mode: '0775'
+  loop: "{{ merged_zones }}"
+  loop_control:
+    label: "{{ item.zone_name }}"
+  notify: Restart PowerDNS Auth service
+
+- name: Create reverse zone files for IPv4
+  template:
+    src: reverse_zone.j2
+    dest: /etc/named/zones/reverse/{{ ('.'.join(item.split('.')[::-1])) }}.in-addr.arpa.db
+    owner: root
+    group: root
+    mode: '0775'
+  loop: "{{ networks }}"
+  notify: Restart PowerDNS Auth service
+
+# Пока IPv6 не нужен
+#- name: Create reverse zone files for IPv6
+#  template:
+#    src: reverse_zone_ipv6.j2
+#    dest: /etc/named/zones/reverse/{{ ('.'.join(item.split(':')[::-1])) }}.ip6.arpa.db
+#    owner: root
+#    group: root
+#    mode: '0775'
+#  loop: "{{ ipv6_networks }}"
+#  notify: Restart PowerDNS Auth service
+
+- name: Configure BIND to use the zone files
+  template:
+    src: named.conf.j2
+    dest: /etc/named/named.conf
+    owner: root
+    group: root
+    mode: '0775'
+  notify: Restart PowerDNS Auth service
+  
+- name: Generate the PowerDNS Recursor configuration
+  template:
+    src: recursor.conf.j2
+    dest: /etc/powerdns/recursor.conf
+    owner: root
+    group: pdns
+    mode: 0640
+  notify: Restart PowerDNS Recursor
+  tags: PowerDNS_Recursor_configuration

@@ -1,0 +1,157 @@
+location: ""
+pdns_service_name: "pdns"
+pdns_rec_service_name: "pdns-recursor"
+
+# SOA information
+dns_zones_ttl: "86400"
+dns_zones_time_to_refresh: "3600"
+dns_zones_time_to_retry: "1800"
+dns_zones_time_to_expire: "604800"
+dns_zones_minimum_ttl: "86400"
+hostmaster_email: "admin.example.ru"
+
+# настройки рекурсивного сервера
+pdns_rec_config:
+  allow-from: '127.0.0.1/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16'
+  forward-zones: example.ru={{ ansible_default_ipv4.address }}:5300, tututu.com={{ ansible_default_ipv4.address }}:5300, example-dev.ru=10.2.0.1:53;10.2.0.2:53;10.2.0.3:53
+  local-address: "{{ ansible_default_ipv4.address }}"
+  local-port: 53
+  webserver: yes
+  webserver-address: "{{ ansible_default_ipv4.address }}"
+  webserver-port: 8082
+  webserver-allow-from: "10.0.0.1/8"
+  api-key: 'API_KEY'
+
+# Сети, которые нужно описать для PTR записей
+networks:
+      - '10.2.5'
+      - '10.2.6'
+      - '10.11'
+      - '10.228'
+
+# Список ns серверов. Используеться для формирования PTR файла.
+name_servers:
+  - name: dev-powerdns01.example.ru
+    location: rus
+  - name: dev-powerdns01.example.ru
+    location: rus
+  - name: dev-powerdns03.example.ru
+    location: uzb
+  - name: dev-powerdns04.example.ru
+    location: uzb
+
+# Описание зон и записей
+dns_zones:
+  - name: "example.ru"
+    name_servers:
+      - name: "dev-powerdns01"
+        location: rus
+      - name: "dev-powerdns02"
+        location: rus
+      - name: "dev-powerdns03" 
+        location: uzb
+      - name: "dev-powerdns04"
+        location: uzb
+    mail_servers:
+      - name: mx1
+        priority: 10
+      - name: mx2
+        priority: 20
+    records:
+      - name: "dev-powerdns01"
+        type: "a"
+        ip: "10.2.5.10"
+        ttl: "3600"
+      - name: "dev-powerdns02"
+        type: "a"
+        ip: "10.2.5.11"
+        ttl: "3600"
+      - name: "dev-powerdns03"
+        type: "a"
+        ip: "10.2.5.10"
+        ttl: "3600"
+        location: uzb
+      - name: "dev-powerdns04"
+        type: "a"
+        ip: "10.2.5.14"
+        ttl: "3600"
+        location: uzb
+      - name: "lupa"
+        type: "a"
+        ip: "10.228.228.228"
+        ttl: "5400"
+      - name: "pupa"
+        type: "a"        
+        ip: "1.88.4.1"
+        ipv6: 2001:db8::2
+        ttl: "3600"
+      - name: "pupa"
+        type: "a"        
+        ip: "1.4.88.1"
+        ipv6: tututu:gtr:1:2
+        ttl: "3600"
+        location: uzb
+      - name: "ololoshka"
+        type: "a"        
+        ip: "1.1.1.21"
+        ttl: "3600"
+      - name: "ololoshka"
+        type: "a"        
+        ip: "10.11.11.15"
+        ttl: "3600"
+      - name: "buchacha"
+        type: "a"        
+        ip: "10.2.6.55"
+        ttl: "3600"
+      - name: srv777
+        type: cname
+        target: yandex.ru
+    services:
+      - name: _ldap._tcp
+        weight: 100
+        port: 88
+        priority: 10
+        target: dc001.corp.piska.com
+    text:
+      - name: ololo
+        text: atatatattata
+    naptr:                       # Name Authority Pointer (NAPTR) используется для IP
+      - name: "sip"              #   телефонии
+        order: 100
+        pref: 10
+        flags: "S"
+        service: "SIP+D2T"
+        regex: "!^.*$!sip:customer-service@example.com!"
+        replacement: "_sip._tcp.example.com."
+  - name: "tututu.com"
+    name_servers:
+      - name: "dev-powerdns01"
+        location: rus
+      - name: "dev-powerdns02"
+        location: rus
+      - name: "dev-powerdns03" 
+        location: uzb
+      - name: "dev-powerdns04"
+        location: uzb
+    records: 
+      - name: "dev-powerdns01"
+        type: "a"
+        ip: "10.2.5.10"
+        ttl: "3600"
+      - name: "dev-powerdns02"
+        type: "a"
+        ip: "10.2.5.11"
+        ttl: "3600"
+      - name: "dev-powerdns15"
+        type: "a"
+        ip: "10.2.5.17"
+        ttl: "3600"
+      - name: "lupa228"
+        type: "a"
+        ip: "10.228.228.5"
+        ttl: "3600"
+      - name: "atatata"
+        type: "a"
+        ip: "10.228.228.13"
+        ttl: "3600"
+        location: uzb

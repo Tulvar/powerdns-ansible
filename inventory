@@ -1,0 +1,11 @@
+[rus]
+dev-powerdns01 ansible_host=10.1.1.1
+
+[uzb]
+dev-powerdns02 ansible_host=10.1.1.2
+
+[rus:vars]
+location=rus
+
+[uzb:vars]
+location=uzb

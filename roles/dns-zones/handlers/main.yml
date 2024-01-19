@@ -1,0 +1,12 @@
+---
+- name: Restart PowerDNS Auth service
+  service:
+    name: "{{ pdns_rec_service_name }}"
+    state: restarted
+  when: do_notify|default(true)|bool
+
+- name: Restart PowerDNS Recursor
+  service:
+    name: "{{ pdns_rec_service_name }}"
+    state: restarted
+  when: do_notify|default(true)|bool

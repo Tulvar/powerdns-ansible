@@ -1,0 +1,28 @@
+- name: Create a list with zones and filtered records
+  set_fact:
+    filtered_zones: "{{ filtered_zones|default([]) + [{'zone_name': zone.name, 'records': zone.records|json_query('[?(location || `main`) == `' + (location|default('main')) + '`]')}] }}"
+  loop: "{{ dns_zones }}"
+  loop_control:
+    loop_var: zone
+  no_log: true
+
+- name: Create a list with all zones and records with location not defined or equal to 'main'
+  set_fact:
+    all_zones_records: "{{ all_zones_records|default([]) + [{'zone_name': zone.name, 'records': zone.records|json_query(\"[?location == 'main' || !location]\")}] }}"
+  loop: "{{ dns_zones }}"
+  loop_control:
+    loop_var: zone
+  no_log: true
+
+- name: Merge filtered_zones and all_zones_records and remove duplicates
+  set_fact:
+    merged_zones: "{{ merged_zones|default([]) + [{'zone_name': item.0.zone_name, 'records': _unique_records}] }}"
+  vars:
+    _filtered_records_set: "{{ item.1.records|map(attribute='name')|list }}"
+    _unique_records: "{{ item.0.records|rejectattr('name', 'in', _filtered_records_set)|list + item.1.records }}"
+  with_together:
+    - "{{ all_zones_records }}"
+    - "{{ filtered_zones }}"
+  loop_control:
+    loop_var: item
+  no_log: true

@@ -1,0 +1,56 @@
+{% set zone = dns_zones|selectattr('name', 'equalto', item.zone_name)|first %}
+$TTL 86400
+@       IN      SOA     {{ ansible_hostname }}.{{ item.zone_name }}. {{ hostmaster_email }}. (
+                        {{ ansible_date_time.epoch|int }} ; serial
+                        {{ dns_zones_time_to_refresh }} ; Refresh
+                        {{ dns_zones_time_to_retry }} ; Retry
+                        {{ dns_zones_time_to_expire }} ; Expire
+                        {{ dns_zones_minimum_ttl }} ) ; Minimum TTL
+
+{% for ns in zone['name_servers'] %}
+{% if ns.location is defined %}
+{% if ns.location == location %}
+@                          IN  NS      {{ ns.name }}.{{ item.zone_name }}.
+{% endif %}
+{% endif %}
+{% endfor %}
+
+{% if 'mail_servers' in zone %}
+{% for mx in zone.mail_servers %}
+{% if mx.location is defined %}
+{% if mx.location == location %}
+@                         IN  MX     {{ mx.priority}}  {{ mx.name }}{% if not mx.name.endswith('.') %}.{{ item.zone_name }}.
+{% endif %}
+{% else %}
+@                         IN  MX     {{ mx.priority}}  {{ mx.name }}{% if not mx.name.endswith('.') %}.{{ item.zone_name }}.
+{% endif %}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% for record in item.records %}
+{% if record.type == 'a' %}
+{{ record.name.ljust(20) }}{{ (record.ttl|string).rjust(6) if record.ttl is defined else ''.ljust(6) }} IN  {{ record.type|upper }}      {{ record.ip }}
+{% elif record.type == 'cname' %}
+{{ record.name.ljust(22) }}{{ (record.ttl|string).rjust(6) if record.ttl is defined else '3600'.ljust(4) }} IN  CNAME      {{ record.target }}
+{% endif %}
+{% endfor %}
+
+{% if 'services' in zone %}
+{% for service in zone.services %}
+{{ service.name }}.{{ zone.name }}.  IN  SRV  {{ service.priority }}  {{ service.weight }}  {{ service.port }}  {{ service.target }}
+{% endfor %}
+{% endif %}
+
+{% if 'txt' in zone %}
+{% for txt_record in zone.txt %}
+{{ txt_record.name }}.{{ zone.name }}.  IN  TXT  "{{ txt_record.text }}"
+{% endfor %}
+{% endif %}
+
+{% if 'naptr' in zone %}
+{% for naptr_record in zone.naptr %}
+{{ naptr_record.name }}.{{ zone.name }}.  IN  NAPTR  {{ naptr_record.order }}  {{ naptr_record.pref }}  "{{ naptr_record.flags }}"  "{{ naptr_record.service }}"  "{{ naptr_record.regex }}"  {{ naptr_record.replacement }}
+{% endfor %}
+{% endif %}

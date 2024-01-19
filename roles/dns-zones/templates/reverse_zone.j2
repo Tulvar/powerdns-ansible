@@ -1,0 +1,34 @@
+$ORIGIN {{ ('.'.join(item.split('.')[::-1])) }}.in-addr.arpa.
+$TTL 86400
+@     IN     SOA    {{ ansible_hostname }}.{{ merged_zones[0].zone_name }}. {{ hostmaster_email }}. (
+                    {{ ansible_date_time.epoch|int }} ; serial
+                    {{ dns_zones_time_to_refresh }} ; Refresh
+                    {{ dns_zones_time_to_retry }} ; Retry
+                    {{ dns_zones_time_to_expire }} ; Expire
+                    {{ dns_zones_minimum_ttl }} ) ; Minimum TTL
+
+{% for ns in name_servers %}
+{% if ns.location is defined %}
+@                          IN  NS      {{ ns.name }}.
+{% endif %}
+{% endfor %}
+
+{% for zone in merged_zones %}
+{% for record in zone.records %}
+{% if record.type == 'a' %}
+{% for network in networks %}
+{% set network_parts = network.split('.') %}
+{% set ip_parts = record.ip.split('.') %}
+{% set match = ip_parts[:network_parts|length]|join('.') == network %}
+{% if match %}
+{% set partial_match = record.ip.startswith(item) %}
+{% if partial_match %}
+{% set ip_remainder = ip_parts[network_parts|length:]|join('.') %}
+{% set reverse_ip_remainder = ip_remainder.split('.')[::-1]|join('.') %}
+{{ reverse_ip_remainder }}            IN PTR {{ record.name }}.{{ zone.zone_name }}.
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endfor %}
