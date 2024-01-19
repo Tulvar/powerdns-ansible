@@ -1,14 +1,14 @@
 - name: Create a list with zones and filtered records
   set_fact:
-    filtered_zones: "{{ filtered_zones|default([]) + [{'zone_name': zone.name, 'records': zone.records|json_query('[?(location || `main`) == `' + (location|default('main')) + '`]')}] }}"
+    filtered_zones: "{{ filtered_zones|default([]) + [{'zone_name': zone.name, 'records': zone.records|json_query('[?(location || `rus`) == `' + (location|default('rus')) + '`]')}] }}"
   loop: "{{ dns_zones }}"
   loop_control:
     loop_var: zone
   no_log: true
 
-- name: Create a list with all zones and records with location not defined or equal to 'main'
+- name: Create a list with all zones and records with location not defined or equal to 'rus'
   set_fact:
-    all_zones_records: "{{ all_zones_records|default([]) + [{'zone_name': zone.name, 'records': zone.records|json_query(\"[?location == 'main' || !location]\")}] }}"
+    all_zones_records: "{{ all_zones_records|default([]) + [{'zone_name': zone.name, 'records': zone.records|json_query(\"[?location == 'rus' || !location]\")}] }}"
   loop: "{{ dns_zones }}"
   loop_control:
     loop_var: zone
